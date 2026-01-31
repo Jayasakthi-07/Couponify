@@ -1,8 +1,11 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ShoppingBag, Tag, CreditCard, LogOut, User, Menu, X, Gift } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { Home, ShoppingBag, Tag, CreditCard, LogOut, User, Menu, X, Gift, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
+// Import logo at the top removed
+// import logo from '../assets/logo.png'; 
 
 const SidebarItem = ({ icon: Icon, label, path, active }) => (
     <Link
@@ -19,6 +22,7 @@ const SidebarItem = ({ icon: Icon, label, path, active }) => (
 
 const Layout = () => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -90,6 +94,13 @@ const Layout = () => {
                             </div>
                         </div>
                     </div>
+                    <button
+                        onClick={toggleTheme}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors mb-2"
+                    >
+                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                    </button>
                     <button
                         onClick={handleLogoutClick}
                         className="w-full flex items-center space-x-3 px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"

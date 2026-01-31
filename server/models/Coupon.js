@@ -6,7 +6,7 @@ const couponSchema = new mongoose.Schema({
     code: { type: String, required: true },
     expiryDate: { type: Date, required: true },
     price: { type: Number, required: true }, // In credits
-    status: { type: String, enum: ['pending', 'available', 'sold'], default: 'pending' },
+    status: { type: String, enum: ['wallet', 'pending', 'available', 'sold'], default: 'wallet' },
     buyerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     createdAt: { type: Date, default: Date.now }
 }, { collection: 'coupons' });

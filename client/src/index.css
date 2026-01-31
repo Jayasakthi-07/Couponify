@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 dark:bg-dark dark:text-slate-100 font-sans antialiased selection:bg-primary selection:text-white;
+    @apply bg-slate-50 text-slate-900 dark:bg-dark dark:text-slate-100 font-sans antialiased selection:bg-primary selection:text-white transition-colors duration-300;
   }
 }
 

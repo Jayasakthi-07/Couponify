@@ -5,23 +5,47 @@ const Wallet = require('../models/Wallet');
 const Transaction = require('../models/Transaction');
 const auth = require('../middleware/auth');
 
-// List a Coupon
-router.post('/sell', auth, async (req, res) => {
-    const { brand, code, expiryDate, price } = req.body;
+// Add a Coupon to Wallet
+router.post('/add', auth, async (req, res) => {
+    const { brand, code, expiryDate } = req.body;
     try {
         const coupon = new Coupon({
             sellerId: req.user.id,
             brand,
             code,
             expiryDate,
-            price,
-            status: 'pending' // Admin must approve
+            price: 0, // Not for sale yet
+            status: 'wallet'
         });
         await coupon.save();
+        res.json(coupon);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
-        // Log transaction? Maybe only when Sold?
-        // Requirement: "Log referral reward in transactions", doesn't explicitly say log 'listing'.
+// List a Coupon for Sale (from Wallet)
+router.post('/sell/:id', auth, async (req, res) => {
+    const { price } = req.body;
+    try {
+        const coupon = await Coupon.findById(req.params.id);
+        if (!coupon) return res.status(404).json({ msg: 'Coupon not found' });
 
+        // Check ownership
+        if (coupon.sellerId.toString() !== req.user.id && (!coupon.buyerId || coupon.buyerId.toString() !== req.user.id)) {
+            return res.status(401).json({ msg: 'Not authorized' });
+        }
+
+        // If it was bought, set new sellerId
+        if (coupon.buyerId && coupon.buyerId.toString() === req.user.id) {
+            coupon.sellerId = req.user.id;
+            coupon.buyerId = null; // Reset buyer
+        }
+
+        coupon.price = price;
+        coupon.status = 'pending'; // Requires admin approval? Or available? Let's check plan. Plan says pending.
+
+        await coupon.save();
         res.json(coupon);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -55,7 +79,12 @@ router.post('/buy/:id', auth, async (req, res) => {
         buyerWallet.credits -= coupon.price;
         sellerWallet.credits += coupon.price;
 
-        coupon.status = 'sold'; // Or 'redeemed'? Req says "Status = redeemed".
+        coupon.status = 'wallet'; // Now in buyer's wallet, not sold/done. "sold" was previous status, but "wallet" makes sense for re-listing.
+        // Wait, previous logic had 'sold'. If I change to 'wallet', it means they can use it or sell it.
+        // Let's stick to 'wallet' for ownership. But we need to know it was bought?
+        // The model has buyerId. If buyerId is set, it's theirs.
+        // Let's set status to 'wallet' for the new owner.
+
         coupon.buyerId = req.user.id;
 
         await buyerWallet.save();
@@ -85,10 +114,25 @@ router.post('/buy/:id', auth, async (req, res) => {
     }
 });
 
-// My Coupons (Purchased)
+// My Coupons (In Wallet + Purchased)
 router.get('/my-coupons', auth, async (req, res) => {
     try {
-        const coupons = await Coupon.find({ buyerId: req.user.id }).sort({ createdAt: -1 });
+        // Fetch coupons where user is the CURRENT owner.
+        // This includes:
+        // 1. Coupons explicitly bought by user (buyerId = user.id)
+        // 2. Coupons uploaded by user and NOT sold yet (sellerId = user.id AND buyerId = null)
+
+        // Actually simpler: 
+        // If buyerId is set, that's the owner.
+        // If buyerId is null, sellerId is the owner.
+
+        const coupons = await Coupon.find({
+            $or: [
+                { buyerId: req.user.id },
+                { sellerId: req.user.id, buyerId: null }
+            ]
+        }).sort({ createdAt: -1 });
+
         res.json(coupons);
     } catch (err) {
         res.status(500).json({ error: err.message });

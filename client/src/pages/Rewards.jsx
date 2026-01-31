@@ -12,7 +12,7 @@ const Rewards = () => {
     const [referralCode, setReferralCode] = useState('');
     const [referralLoading, setReferralLoading] = useState(false);
     const [toast, setToast] = useState({ message: '', type: 'error' });
-    const { user } = useAuth(); // Need user for their username
+    const { user, refreshWallet } = useAuth(); // Need user for their username
 
     // Scratch Card States
     const [reward, setReward] = useState(null); // The actual reward amount
@@ -221,7 +221,7 @@ const Rewards = () => {
                             <Sparkles size={24} />
                         </div>
                         <h3 className="text-xl font-bold mb-2 dark:text-white">Refer & Earn</h3>
-                        <p className="text-slate-500 mb-6 text-sm">Give your friends 0 credits, get 25 credits when they use your code! (Wait, only you win?)</p>
+                        <p className="text-slate-500 mb-6 text-sm">Invite friends and earn 25 credits for every successful referral!</p>
 
                         <div className="w-full space-y-4">
                             <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
